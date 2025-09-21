@@ -1,11 +1,35 @@
+"use client";
+
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { BookOpen } from "lucide-react";
+import { useState } from "react";
+import { useSigninUserMutation } from "@/app/services/authApi";
+import { useDispatch } from "react-redux";
+import { login } from "@/app/features/auth";
 
 export default function SignInPage() {
+
+  const [ email, setEmail ] = useState( "" );
+  const [ password, setPassword ] = useState( "" );
+  const [ signinUser, { isLoading, error } ] = useSigninUserMutation();
+  const dispatch = useDispatch();
+
+  const handleSubmit = async () => {
+    try {
+
+      const data = await signinUser( { email, password } ).unwrap();
+      dispatch( login( data ) );
+      console.log( data );
+
+    } catch ( err ) {
+      console.log( err );
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b to-amber-50 flex items-center justify-center">
       <Card className="w-full max-w-md">
@@ -20,11 +44,11 @@ export default function SignInPage() {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" placeholder="Enter your email" required />
+            <Input id="email" type="email" placeholder="Enter your email" onChange={ ( e ) => setEmail( e.target.value ) } required />
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" placeholder="Enter your password" required />
+            <Input id="password" type="password" placeholder="Enter your password" onChange={ ( e ) => setPassword( e.target.value ) } required />
           </div>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
@@ -33,13 +57,13 @@ export default function SignInPage() {
                 Remember me
               </Label>
             </div>
-            <Link href="/auth/forgot-password" className="text-sm text-secondary hover:underline">
+            <Link href="#" className="text-sm text-secondary hover:underline">
               Forgot password?
             </Link>
           </div>
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
-          <Button className="w-full bg-secondary hover:bg-secondary/90">Sign In</Button>
+          <Button className="w-full bg-secondary hover:bg-secondary/90" onClick={ handleSubmit }>Sign In</Button>
           <p className="text-center text-sm text-gray-600">
             Don't have an account?{ " " }
             <Link href="/auth/signup" className="text-secondary hover:underline">

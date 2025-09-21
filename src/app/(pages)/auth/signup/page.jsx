@@ -10,6 +10,9 @@ import { BookOpen } from "lucide-react";
 import { useState } from "react";
 import axios from "axios";
 import { API_LINKS } from "@/app/constants";
+import { useSignupUserMutation } from "@/app/services/authApi";
+import { useDispatch } from "react-redux";
+import { login } from "@/app/features/auth";
 
 export default function SignUpPage() {
 
@@ -18,6 +21,9 @@ export default function SignUpPage() {
   const [ university, setUniversity ] = useState( "" );
   const [ password, setPassword ] = useState( "" );
   const [ confirmPassword, setConfirmPassword ] = useState( "" );
+
+  const [ signupUser ] = useSignupUserMutation();
+  const dispatch = useDispatch();
 
   const [ isLoading, setLoading ] = useState( false );
 
@@ -40,14 +46,10 @@ export default function SignUpPage() {
     }
 
     try {
-      const response = await axios.post( API_LINKS.SIGNUP_USER, {
-        name,
-        email,
-        university,
-        password,
-      } );
 
-      console.log( response.data );
+      const data = await signupUser( { name, email, university, password } ).unwrap();
+      dispatch( login( data ) );
+
     } catch ( err ) {
       console.log( err );
     } finally {
