@@ -6,9 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { BookOpen } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSigninUserMutation } from "@/app/services/authApi";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { login } from "@/app/features/auth";
 import { useRouter } from "next/navigation";
 
@@ -19,6 +19,13 @@ export default function SignInPage() {
   const [ signinUser, { isLoading, error } ] = useSigninUserMutation();
   const dispatch = useDispatch();
   const router = useRouter();
+  const user = useSelector( ( state ) => state.auth.user );
+
+  useEffect( () => {
+    if ( user ) {
+      router.push( "/profile" );
+    }
+  }, [ user ] );
 
   const handleSubmit = async () => {
     try {

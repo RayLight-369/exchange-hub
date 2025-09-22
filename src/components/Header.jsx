@@ -8,12 +8,15 @@ import { useDispatch, useSelector } from "react-redux";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu";
 import { useSignoutUserMutation } from "@/app/services/authApi";
 import { logout } from "@/app/features/auth";
+import { useRouter } from "next/navigation";
 
 export function Header() {
 
   const user = useSelector( ( state ) => state.auth.user );
   const [ signoutUser ] = useSignoutUserMutation();
   const dispatch = useDispatch();
+  const router = useRouter();
+
   const handleSignout = async () => {
     try {
       await signoutUser().unwrap(); // call backend /signout (clears cookie)
@@ -79,7 +82,7 @@ export function Header() {
                   <DropdownMenuContent>
                     <DropdownMenuLabel>My Account</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem>Profile</DropdownMenuItem>
+                    <DropdownMenuItem onClick={ () => router.push( "/profile" ) }>Profile</DropdownMenuItem>
                     <DropdownMenuItem onClick={ handleSignout }>
                       Sign Out
                     </DropdownMenuItem>
