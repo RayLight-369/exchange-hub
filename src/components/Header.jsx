@@ -1,9 +1,28 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, BookOpen, User, Menu } from "lucide-react";
 import Link from "next/link";
+import { useDispatch, useSelector } from "react-redux";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu";
+import { useSignoutUserMutation } from "@/app/services/authApi";
+import { logout } from "@/app/features/auth";
 
 export function Header() {
+
+  const user = useSelector( ( state ) => state.auth.user );
+  const [ signoutUser ] = useSignoutUserMutation();
+  const dispatch = useDispatch();
+  const handleSignout = async () => {
+    try {
+      await signoutUser().unwrap(); // call backend /signout (clears cookie)
+      dispatch( logout() ); // clear Redux state
+    } catch ( err ) {
+      console.error( "Signout failed:", err );
+    }
+  };
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -23,7 +42,7 @@ export function Header() {
           </div>
 
           {/* Navigation */ }
-          <nav className="hidden md:flex items-center space-x-6">
+          <nav className="hidden md:flex items-center gap-6 px-3">
             <Link href="/browse" className="text-sm font-medium hover:text-primary transition-colors">
               Browse Books
             </Link>
@@ -33,18 +52,42 @@ export function Header() {
           </nav>
 
           {/* User Actions */ }
-          <div className="flex items-center space-x-4">
-            <Link href="/auth/signin">
-              <Button variant="ghost" size="sm" className="hidden sm:flex">
-                <User className="h-4 w-4 mr-2" />
-                Sign In
-              </Button>
-            </Link>
-            <Link href="/auth/signup">
-              <Button size="sm" className="bg-secondary hover:bg-secondary/90">
-                Get Started
-              </Button>
-            </Link>
+          <div className="flex items-center gap-4">
+            {
+              !user ? (
+                <>
+                  <Link href="/auth/signin">
+                    <Button variant="ghost" size="sm" className="hidden sm:flex">
+                      <User className="h-4 w-4 mr-2" />
+                      Sign In
+                    </Button>
+                  </Link>
+                  <Link href="/auth/signup">
+                    <Button size="sm" className="bg-secondary hover:bg-secondary/90">
+                      Get Started
+                    </Button>
+                  </Link>
+                </>
+              ) : (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="hidden sm:flex">
+                      <User className="h-4 w-4 mr-2" />
+                      { user.name }
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem>Profile</DropdownMenuItem>
+                    <DropdownMenuItem onClick={ handleSignout }>
+                      Sign Out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+              )
+            }
             <Button variant="ghost" size="sm" className="md:hidden">
               <Menu className="h-4 w-4" />
             </Button>

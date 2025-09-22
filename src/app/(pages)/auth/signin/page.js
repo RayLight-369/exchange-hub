@@ -10,6 +10,7 @@ import { useState } from "react";
 import { useSigninUserMutation } from "@/app/services/authApi";
 import { useDispatch } from "react-redux";
 import { login } from "@/app/features/auth";
+import { useRouter } from "next/navigation";
 
 export default function SignInPage() {
 
@@ -17,6 +18,7 @@ export default function SignInPage() {
   const [ password, setPassword ] = useState( "" );
   const [ signinUser, { isLoading, error } ] = useSigninUserMutation();
   const dispatch = useDispatch();
+  const router = useRouter();
 
   const handleSubmit = async () => {
     try {
@@ -24,6 +26,8 @@ export default function SignInPage() {
       const data = await signinUser( { email, password } ).unwrap();
       dispatch( login( data ) );
       console.log( data );
+
+      router.push( "/" );
 
     } catch ( err ) {
       console.log( err );

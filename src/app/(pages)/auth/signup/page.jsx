@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { BookOpen } from "lucide-react";
 import { useState } from "react";
 import axios from "axios";
-import { API_LINKS } from "@/app/constants";
+import { API_LINKS, UNIVERSITIES } from "@/app/constants";
 import { useSignupUserMutation } from "@/app/services/authApi";
 import { useDispatch } from "react-redux";
 import { login } from "@/app/features/auth";
@@ -85,13 +85,11 @@ export default function SignUpPage() {
                 <SelectValue placeholder="Select your university" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="harvard">Harvard University</SelectItem>
-                <SelectItem value="mit">MIT</SelectItem>
-                <SelectItem value="stanford">Stanford University</SelectItem>
-                <SelectItem value="berkeley">UC Berkeley</SelectItem>
-                <SelectItem value="yale">Yale University</SelectItem>
-                <SelectItem value="princeton">Princeton University</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
+                { UNIVERSITIES.map( ( university ) => (
+                  <SelectItem key={ university } value={ university }>
+                    { university }
+                  </SelectItem>
+                ) ) }
               </SelectContent>
             </Select>
           </div>
