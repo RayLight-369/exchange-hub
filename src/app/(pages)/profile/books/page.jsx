@@ -18,69 +18,30 @@ import {
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Plus, Edit, Trash2, BookOpen } from "lucide-react";
+import { formatDate, SUBJECTS } from "@/app/constants";
+import { useSelector } from "react-redux";
+import { useAddBookMutation, useGetCurrentUserQuery } from "@/app/services/api";
 
-// Mock data based on Book schema
-const mockBooks = [
-  {
-    id: "1",
-    title: "Calculus: Early Transcendentals",
-    price: "",
-    subject: "Mathematics",
-    owner: { id: "1", name: "John Smith", email: "john@harvard.edu" },
-    ownerId: "1",
-    createdAt: "2024-01-15T10:30:00Z",
-  },
-  {
-    id: "2",
-    title: "Introduction to Algorithms",
-    subject: "Computer Science",
-    price: "",
-    owner: { id: "2", name: "Sarah Johnson", email: "sarah@mit.edu" },
-    ownerId: "2",
-    createdAt: "2024-01-20T14:22:00Z",
-  },
-  {
-    id: "3",
-    title: "Organic Chemistry",
-    subject: "Chemistry",
-    price: "",
-    owner: { id: "3", name: "Mike Chen", email: "mike@stanford.edu" },
-    ownerId: "3",
-    createdAt: "2024-02-01T09:15:00Z",
-  },
-  {
-    id: "4",
-    title: "Principles of Economics",
-    subject: "Economics",
-    price: "",
-    owner: { id: "4", name: "Emily Davis", email: "emily@berkeley.edu" },
-    ownerId: "4",
-    createdAt: "2024-02-05T16:45:00Z",
-  },
-];
-
-const subjects = [
-  "Mathematics",
-  "Computer Science",
-  "Chemistry",
-  "Physics",
-  "Biology",
-  "Economics",
-  "Psychology",
-  "Engineering",
-  "Literature",
-  "History",
-  "Philosophy",
-  "Other",
-];
 
 export default function BooksPage() {
-  const [ books, setBooks ] = useState( mockBooks );
+  // const user = useSelector( ( state ) => state.auth.user );
+
+  const { data: user, error, refetch } = useGetCurrentUserQuery( undefined, {
+    refetchOnMountOrArgChange: true,
+    refetchOnReconnect: true,
+    refetchOnFocus: true,
+  } );
+  const books = user?.books ?? [];
+
   const [ searchTerm, setSearchTerm ] = useState( "" );
   const [ subjectFilter, setSubjectFilter ] = useState( "all" );
   const [ isAddDialogOpen, setIsAddDialogOpen ] = useState( false );
   const [ isEditDialogOpen, setIsEditDialogOpen ] = useState( false );
   const [ selectedBook, setSelectedBook ] = useState( null );
+  const [ bookInfo, setBookInfo ] = useState( null );
+
+
+  const [ addBook, { isLoading: isAddingBook } ] = useAddBookMutation();
 
   const filteredBooks = books.filter( ( book ) => {
     const matchesSearch =
@@ -103,6 +64,14 @@ export default function BooksPage() {
   const handleEditBook = ( book ) => {
     setSelectedBook( book );
     setIsEditDialogOpen( true );
+  };
+
+  const handleAddBook = async ( book ) => {
+
+    await addBook( book ).unwrap();
+    // await refetch();
+    setBookInfo( null );
+    setIsAddDialogOpen( false );
   };
 
   const getSubjectColor = ( subject ) => {
@@ -151,20 +120,20 @@ export default function BooksPage() {
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="title">Title</Label>
-                    <Input id="title" placeholder="Enter book title" />
+                    <Input id="title" placeholder="Enter book title" onChange={ ( e ) => setBookInfo( { ...bookInfo, title: e.target.value } ) } />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="price">Price</Label>
-                    <Input id="price" placeholder="Enter price (optional)" />
+                    <Input id="price" placeholder="Enter price (optional)" onChange={ ( e ) => setBookInfo( { ...bookInfo, price: e.target.value } ) } />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="subject">Subject</Label>
-                    <Select>
+                    <Select onValueChange={ ( subject ) => setBookInfo( { ...bookInfo, subject } ) }>
                       <SelectTrigger>
                         <SelectValue placeholder="Select subject" />
                       </SelectTrigger>
                       <SelectContent>
-                        { subjects.map( ( subject ) => (
+                        { SUBJECTS.map( ( subject ) => (
                           <SelectItem key={ subject } value={ subject }>
                             { subject }
                           </SelectItem>
@@ -178,7 +147,14 @@ export default function BooksPage() {
                   <Button variant="outline" onClick={ () => setIsAddDialogOpen( false ) }>
                     Cancel
                   </Button>
-                  <Button className="bg-cyan-600 hover:bg-cyan-700">Add Book</Button>
+                  <Button className="bg-cyan-600 hover:bg-cyan-700" onClick={ () => {
+                    handleAddBook( {
+                      title: bookInfo.title,
+                      price: bookInfo.price,
+                      subject: bookInfo.subject,
+                      ownerId: user.id
+                    } );
+                  } }>Add Book</Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
@@ -202,7 +178,7 @@ export default function BooksPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Subjects</SelectItem>
-                { subjects.map( ( subject ) => (
+                { SUBJECTS.map( ( subject ) => (
                   <SelectItem key={ subject } value={ subject }>
                     { subject }
                   </SelectItem>
@@ -218,7 +194,6 @@ export default function BooksPage() {
                 <TableHead>Title</TableHead>
                 <TableHead>Price</TableHead>
                 <TableHead>Subject</TableHead>
-                <TableHead>Owner</TableHead>
                 <TableHead>Listed</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
@@ -236,13 +211,7 @@ export default function BooksPage() {
                   <TableCell>
                     <Badge className={ getSubjectColor( book.subject || "Other" ) }>{ book.subject || "Other" }</Badge>
                   </TableCell>
-                  <TableCell>
-                    <div>
-                      <p className="font-medium">{ book.owner.name }</p>
-                      <p className="text-sm text-gray-500">{ book.owner.email }</p>
-                    </div>
-                  </TableCell>
-                  <TableCell>{ new Date( book.createdAt ).toLocaleDateString() }</TableCell>
+                  <TableCell>{ formatDate( book.createdAt ) }</TableCell>
                   <TableCell>
                     <div className="flex items-center space-x-2">
                       <Button variant="ghost" size="sm" onClick={ () => handleEditBook( book ) }>
@@ -289,7 +258,7 @@ export default function BooksPage() {
                     <SelectValue placeholder="Select subject" />
                   </SelectTrigger>
                   <SelectContent>
-                    { subjects.map( ( subject ) => (
+                    { SUBJECTS.map( ( subject ) => (
                       <SelectItem key={ subject } value={ subject }>
                         { subject }
                       </SelectItem>

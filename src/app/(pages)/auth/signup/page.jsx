@@ -10,9 +10,9 @@ import { BookOpen } from "lucide-react";
 import { useState } from "react";
 import axios from "axios";
 import { API_LINKS, UNIVERSITIES } from "@/app/constants";
-import { useSignupUserMutation } from "@/app/services/authApi";
 import { useDispatch } from "react-redux";
 import { login } from "@/app/features/auth";
+import { useSignupUserMutation } from "@/app/services/api";
 
 export default function SignUpPage() {
 

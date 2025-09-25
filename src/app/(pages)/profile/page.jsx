@@ -1,21 +1,7 @@
-"use client";
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, BookOpen, TrendingUp, DollarSign } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
-import { useSelector } from "react-redux";
 
 export default function AdminDashboard() {
-
-  const user = useSelector( ( state ) => state.auth.user );
-  const router = useRouter();
-
-  useEffect( () => {
-    if ( !user ) {
-      router.push( "/auth/signin" );
-    }
-  }, [ user ] );
 
   return (
     <div className="p-6">

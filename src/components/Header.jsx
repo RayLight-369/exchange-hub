@@ -6,13 +6,13 @@ import { Search, BookOpen, User, Menu } from "lucide-react";
 import Link from "next/link";
 import { useDispatch, useSelector } from "react-redux";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu";
-import { useSignoutUserMutation } from "@/app/services/authApi";
 import { logout } from "@/app/features/auth";
 import { useRouter } from "next/navigation";
+import { useGetCurrentUserQuery, useSignoutUserMutation } from "@/app/services/api";
 
 export function Header() {
 
-  const user = useSelector( ( state ) => state.auth.user );
+  const user = useGetCurrentUserQuery();
   const [ signoutUser ] = useSignoutUserMutation();
   const dispatch = useDispatch();
   const router = useRouter();

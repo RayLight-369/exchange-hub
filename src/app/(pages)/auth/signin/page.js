@@ -7,10 +7,10 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { BookOpen } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useSigninUserMutation } from "@/app/services/authApi";
 import { useDispatch, useSelector } from "react-redux";
 import { login } from "@/app/features/auth";
 import { useRouter } from "next/navigation";
+import { useSigninUserMutation } from "@/app/services/api";
 
 export default function SignInPage() {
 

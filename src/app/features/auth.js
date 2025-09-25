@@ -1,5 +1,4 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { authApi } from "../services/authApi";
 
 const authSlice = createSlice( {
   name: "auth",
@@ -12,7 +11,6 @@ const authSlice = createSlice( {
     },
     logout: ( state ) => {
       state.user = null;
-      authApi.util.resetApiState();
     },
   },
 } );
