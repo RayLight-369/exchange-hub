@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Users, BarChart3, Settings, Home, LogOut } from "lucide-react";
-import { useSelector } from "react-redux";
+import { BookOpen, Settings, Home, LogOut } from "lucide-react";
 import { useEffect } from "react";
+import { useGetCurrentUserQuery, useSignoutUserMutation } from "@/app/services/api";
+
 
 const navigation = [
   { name: "Dashboard", href: "/profile", icon: Home },
@@ -18,11 +19,21 @@ const navigation = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const user = useSelector( ( state ) => state.auth.user );
+  const router = useRouter();
+  const { data: user, error, isLoading } = useGetCurrentUserQuery();
+  const [ signoutUser, { isLoading: signoutLoading } ] = useSignoutUserMutation();
 
-  useEffect( () => {
-    console.log( user );
-  }, [ user ] );
+  const handleSignOut = async () => {
+    try {
+      await signoutUser().unwrap();
+      router.push( "/auth/signin" ); // ✅ client-side redirect
+    } catch ( err ) {
+      console.error( "Signout failed:", err );
+    }
+  };
+
+  if ( signoutLoading || isLoading ) return <div className="p-4">Loading...</div>;
+  if ( error || !user ) return null;
 
   if ( user )
     return (
@@ -30,7 +41,7 @@ export function Sidebar() {
         {/* Logo */ }
         <div className="flex items-center px-6 py-4 border-b border-gray-200">
           <BookOpen className="h-8 w-8 text-cyan-600 mr-2" />
-          <span className="text-xl font-bold text-gray-900">ExchangeHub Admin</span>
+          <span className="text-xl font-bold text-gray-900">Admin</span>
         </div>
 
         {/* Navigation */ }
@@ -64,7 +75,7 @@ export function Sidebar() {
               <p className="text-xs text-gray-500">{ user.email }</p>
             </div>
           </div>
-          <Button variant="ghost" className="w-full justify-start text-gray-600 hover:text-white">
+          <Button variant="ghost" className="w-full justify-start text-gray-600 hover:text-white" onClick={ () => handleSignOut() }>
             <LogOut className="h-4 w-4" />
             Sign out
           </Button>

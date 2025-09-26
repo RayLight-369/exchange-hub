@@ -20,13 +20,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search, Plus, Edit, Trash2, BookOpen } from "lucide-react";
 import { formatDate, SUBJECTS } from "@/app/constants";
 import { useSelector } from "react-redux";
-import { useAddBookMutation, useGetCurrentUserQuery } from "@/app/services/api";
+import { useAddBookMutation, useDeleteBookMutation, useGetCurrentUserQuery, useUpdateBookMutation } from "@/app/services/api";
 
 
 export default function BooksPage() {
   // const user = useSelector( ( state ) => state.auth.user );
 
-  const { data: user, error, refetch } = useGetCurrentUserQuery( undefined, {
+  const { data: user } = useGetCurrentUserQuery( undefined, {
     refetchOnMountOrArgChange: true,
     refetchOnReconnect: true,
     refetchOnFocus: true,
@@ -42,29 +42,33 @@ export default function BooksPage() {
 
 
   const [ addBook, { isLoading: isAddingBook } ] = useAddBookMutation();
+  const [ updateBook, { isLoading: isUpdatingBook } ] = useUpdateBookMutation();
+  const [ deleteBook, { isLoading: isDeletingBook } ] = useDeleteBookMutation();
 
   const filteredBooks = books.filter( ( book ) => {
     const matchesSearch =
       book.title.toLowerCase().includes( searchTerm.toLowerCase() ) ||
       book.price?.toLowerCase().includes( searchTerm.toLowerCase() ) ||
       book.subject?.toLowerCase().includes( searchTerm.toLowerCase() ) ||
-      book.owner.name.toLowerCase().includes( searchTerm.toLowerCase() );
+      formatDate( book.createdAt ).toLowerCase().includes( searchTerm.toLowerCase() );
 
     const matchesSubject = subjectFilter === "all" || book.subject === subjectFilter;
 
     return matchesSearch && matchesSubject;
   } );
 
-  const handleDeleteBook = ( bookId ) => {
+  const handleDeleteBook = async ( bookId ) => {
     if ( confirm( "Are you sure you want to delete this book?" ) ) {
-      setBooks( books.filter( ( book ) => book.id !== bookId ) );
+      await deleteBook( bookId ).unwrap();
     }
   };
 
-  const handleEditBook = ( book ) => {
-    setSelectedBook( book );
-    setIsEditDialogOpen( true );
+  const handleEditBook = async ( bookId ) => {
+    await updateBook( { id: bookId, ...bookInfo } ).unwrap();
+    setBookInfo( null );
+    setIsEditDialogOpen( false );
   };
+
 
   const handleAddBook = async ( book ) => {
 
@@ -214,7 +218,11 @@ export default function BooksPage() {
                   <TableCell>{ formatDate( book.createdAt ) }</TableCell>
                   <TableCell>
                     <div className="flex items-center space-x-2">
-                      <Button variant="ghost" size="sm" onClick={ () => handleEditBook( book ) }>
+                      <Button variant="ghost" size="sm" onClick={ () => {
+                        setSelectedBook( book );
+                        setBookInfo( book );
+                        setIsEditDialogOpen( true );
+                      } }>
                         <Edit className="h-4 w-4" />
                       </Button>
                       <Button
@@ -245,15 +253,15 @@ export default function BooksPage() {
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="edit-title">Title</Label>
-                <Input id="edit-title" defaultValue={ selectedBook.title } placeholder="Enter book title" />
+                <Input id="edit-title" defaultValue={ selectedBook.title } placeholder="Enter book title" onChange={ ( e ) => setBookInfo( { ...bookInfo, title: e.target.value } ) } />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="edit-price">Price</Label>
-                <Input id="edit-price" defaultValue={ selectedBook.price } placeholder="Enter price (optional)" />
+                <Input id="edit-price" defaultValue={ selectedBook.price } placeholder="Enter price (optional)" onChange={ ( e ) => setBookInfo( { ...bookInfo, price: e.target.value } ) } />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="edit-subject">Subject</Label>
-                <Select defaultValue={ selectedBook.subject }>
+                <Select defaultValue={ selectedBook.subject } onValueChange={ ( subject ) => setBookInfo( { ...bookInfo, subject } ) }>
                   <SelectTrigger>
                     <SelectValue placeholder="Select subject" />
                   </SelectTrigger>
@@ -273,7 +281,7 @@ export default function BooksPage() {
             <Button variant="outline" onClick={ () => setIsEditDialogOpen( false ) }>
               Cancel
             </Button>
-            <Button className="bg-cyan-600 hover:bg-cyan-700">Save Changes</Button>
+            <Button className="bg-cyan-600 hover:bg-cyan-700" onClick={ () => handleEditBook( selectedBook.id ) }>Save Changes</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

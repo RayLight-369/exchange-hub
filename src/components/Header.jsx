@@ -4,23 +4,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, BookOpen, User, Menu } from "lucide-react";
 import Link from "next/link";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu";
-import { logout } from "@/app/features/auth";
+// import { logout } from "@/app/features/auth";
 import { useRouter } from "next/navigation";
 import { useGetCurrentUserQuery, useSignoutUserMutation } from "@/app/services/api";
 
 export function Header() {
 
-  const user = useGetCurrentUserQuery();
+  const { data: user } = useGetCurrentUserQuery();
   const [ signoutUser ] = useSignoutUserMutation();
-  const dispatch = useDispatch();
   const router = useRouter();
 
   const handleSignout = async () => {
     try {
       await signoutUser().unwrap(); // call backend /signout (clears cookie)
-      dispatch( logout() ); // clear Redux state
     } catch ( err ) {
       console.error( "Signout failed:", err );
     }

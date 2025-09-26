@@ -1,7 +1,14 @@
+"use client";
+
+import { formatDate } from "@/app/constants";
+import { useGetCurrentUserQuery } from "@/app/services/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, BookOpen, TrendingUp, DollarSign } from "lucide-react";
+import { BookOpen } from "lucide-react";
 
 export default function AdminDashboard() {
+
+  const { data: user } = useGetCurrentUserQuery();
+  const books = user?.books ?? [];
 
   return (
     <div className="p-6">
@@ -35,19 +42,14 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              { [
-                { title: "Calculus: Early Transcendentals", author: "James Stewart", subject: "Mathematics" },
-                { title: "Introduction to Algorithms", author: "Thomas Cormen", subject: "Computer Science" },
-                { title: "Organic Chemistry", author: "Paula Bruice", subject: "Chemistry" },
-                { title: "Principles of Economics", author: "Gregory Mankiw", subject: "Economics" },
-              ].map( ( book, index ) => (
+              { books.map( ( book, index ) => (
                 <div key={ index } className="flex items-center space-x-4">
                   <div className="w-10 h-10 bg-amber-100 rounded flex items-center justify-center">
                     <BookOpen className="h-5 w-5 text-amber-600" />
                   </div>
                   <div className="flex-1">
                     <p className="font-medium">{ book.title }</p>
-                    <p className="text-sm text-gray-500">by { book.author }</p>
+                    <p className="text-sm text-gray-500">at { formatDate( book.createdAt ) }</p>
                     <p className="text-xs text-gray-400">{ book.subject }</p>
                   </div>
                 </div>

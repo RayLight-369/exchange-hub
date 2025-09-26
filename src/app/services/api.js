@@ -97,7 +97,7 @@ export const api = createApi( {
         url: `${ API_LINKS.BOOKS }/${ id }`,
         method: "DELETE",
       } ),
-      invalidatesTags: ( res, err, id ) => [
+      invalidatesTags: ( _, __, id ) => [
         { type: "Book", id },
         { type: "Book", id: "LIST" },
         { type: "User", id: "ME" },

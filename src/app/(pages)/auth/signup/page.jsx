@@ -8,11 +8,11 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BookOpen } from "lucide-react";
 import { useState } from "react";
-import axios from "axios";
 import { API_LINKS, UNIVERSITIES } from "@/app/constants";
 import { useDispatch } from "react-redux";
 import { login } from "@/app/features/auth";
 import { useSignupUserMutation } from "@/app/services/api";
+import { useRouter } from "next/navigation";
 
 export default function SignUpPage() {
 
@@ -24,6 +24,7 @@ export default function SignUpPage() {
 
   const [ signupUser ] = useSignupUserMutation();
   const dispatch = useDispatch();
+  const router = useRouter();
 
   const [ isLoading, setLoading ] = useState( false );
 
@@ -49,6 +50,7 @@ export default function SignUpPage() {
 
       const data = await signupUser( { name, email, university, password } ).unwrap();
       dispatch( login( data ) );
+      router.push( "/" );
 
     } catch ( err ) {
       console.log( err );
