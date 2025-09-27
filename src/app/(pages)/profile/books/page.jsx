@@ -19,12 +19,11 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Plus, Edit, Trash2, BookOpen, Upload, X } from "lucide-react";
 import { formatDate, SUBJECTS } from "@/app/constants";
-import { useSelector } from "react-redux";
+// import { useSelector } from "react-redux";
 import { useAddBookMutation, useDeleteBookMutation, useGetCurrentUserQuery, useUpdateBookMutation } from "@/app/services/api";
 
 
 export default function BooksPage() {
-  // const user = useSelector( ( state ) => state.auth.user );
 
   const { data: user } = useGetCurrentUserQuery( undefined, {
     refetchOnMountOrArgChange: true,
@@ -86,23 +85,6 @@ export default function BooksPage() {
     }
   };
 
-  const handleEditImageChange = ( e ) => {
-    const files = Array.from( e.target.files );
-    const newPreviews = files.map( ( file ) => ( {
-      file,
-      preview: URL.createObjectURL( file ),
-      isNew: true,
-    } ) );
-    setEditBookImages( ( prev ) => [ ...prev, ...newPreviews ] );
-  };
-
-  const removeEditImage = ( index ) => {
-    setEditBookImages( ( prev ) => prev.filter( ( _, i ) => i !== index ) );
-  };
-
-  const clearAllEditImages = () => {
-    setEditBookImages( [] );
-  };
 
   const handleEditBook = async ( bookId ) => {
     const formData = new FormData();
@@ -335,7 +317,6 @@ export default function BooksPage() {
                         onClick={ () => {
                           setSelectedBook( book );
                           setBookInfo( book );
-                          setEditBookImages( book.images.map( ( url ) => ( { url, isNew: false } ) ) );
                           setIsEditDialogOpen( true );
                         } }
                       >
