@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Plus, Edit, Trash2, BookOpen } from "lucide-react";
+import { Search, Plus, Edit, Trash2, BookOpen, Upload, X } from "lucide-react";
 import { formatDate, SUBJECTS } from "@/app/constants";
 import { useSelector } from "react-redux";
 import { useAddBookMutation, useDeleteBookMutation, useGetCurrentUserQuery, useUpdateBookMutation } from "@/app/services/api";
@@ -41,6 +41,10 @@ export default function BooksPage() {
   const [ bookInfo, setBookInfo ] = useState( null );
 
 
+  const [ newBookImages, setNewBookImages ] = useState( [] );
+  const [ editBookImages, setEditBookImages ] = useState( [] );
+
+
   const [ addBook, { isLoading: isAddingBook } ] = useAddBookMutation();
   const [ updateBook, { isLoading: isUpdatingBook } ] = useUpdateBookMutation();
   const [ deleteBook, { isLoading: isDeletingBook } ] = useDeleteBookMutation();
@@ -57,26 +61,95 @@ export default function BooksPage() {
     return matchesSearch && matchesSubject;
   } );
 
+
+  const handleImageChange = ( e ) => {
+    const files = Array.from( e.target.files );
+    const newPreviews = files.map( ( file ) => ( {
+      file,
+      preview: URL.createObjectURL( file ),
+      isNew: true,
+    } ) );
+    setNewBookImages( ( prev ) => [ ...prev, ...newPreviews ] );
+  };
+
+  const removeImage = ( index ) => {
+    setNewBookImages( ( prev ) => prev.filter( ( _, i ) => i !== index ) );
+  };
+
+  const clearAllImages = () => {
+    setNewBookImages( [] );
+  };
+
   const handleDeleteBook = async ( bookId ) => {
     if ( confirm( "Are you sure you want to delete this book?" ) ) {
       await deleteBook( bookId ).unwrap();
     }
   };
 
+  const handleEditImageChange = ( e ) => {
+    const files = Array.from( e.target.files );
+    const newPreviews = files.map( ( file ) => ( {
+      file,
+      preview: URL.createObjectURL( file ),
+      isNew: true,
+    } ) );
+    setEditBookImages( ( prev ) => [ ...prev, ...newPreviews ] );
+  };
+
+  const removeEditImage = ( index ) => {
+    setEditBookImages( ( prev ) => prev.filter( ( _, i ) => i !== index ) );
+  };
+
+  const clearAllEditImages = () => {
+    setEditBookImages( [] );
+  };
+
   const handleEditBook = async ( bookId ) => {
-    await updateBook( { id: bookId, ...bookInfo } ).unwrap();
-    setBookInfo( null );
+    const formData = new FormData();
+    formData.append( "title", bookInfo.title );
+    formData.append( "price", bookInfo.price || "" );
+    formData.append( "subject", bookInfo.subject || "" );
+
+    // Existing URLs (not deleted by user)
+    const keptUrls = bookInfo.images.filter( ( img ) => img.startsWith( "http" ) );
+    formData.append( "keepImages", JSON.stringify( keptUrls ) );
+
+    // New files
+    if ( bookInfo.newImages?.length ) {
+      bookInfo.newImages.forEach( ( file ) => {
+        formData.append( "newImages", file );
+      } );
+    }
+
+    await updateBook( { id: bookId, data: formData } ).unwrap();
+
+    setBookInfo( {} );
     setIsEditDialogOpen( false );
   };
 
 
-  const handleAddBook = async ( book ) => {
 
-    await addBook( book ).unwrap();
-    // await refetch();
-    setBookInfo( null );
+
+  const handleAddBook = async () => {
+    const formData = new FormData();
+    formData.append( "title", bookInfo.title );
+    formData.append( "price", bookInfo.price || "" );
+    formData.append( "subject", bookInfo.subject || "" );
+    formData.append( "ownerId", user.id );
+
+    newBookImages.forEach( ( img ) => {
+      if ( img.file ) {
+        formData.append( "images", img.file );
+      }
+    } );
+
+    await addBook( formData ).unwrap();
+    setBookInfo( {} );
+    setNewBookImages( [] );
     setIsAddDialogOpen( false );
   };
+
+
 
   const getSubjectColor = ( subject ) => {
     const colors = {
@@ -145,25 +218,63 @@ export default function BooksPage() {
                       </SelectContent>
                     </Select>
                   </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="book-images">Book Images</Label>
+                      { newBookImages.length > 0 && (
+                        <Button type="button" variant="outline" size="sm" onClick={ clearAllImages } className="text-red-600 hover:text-red-700 bg-transparent">
+                          Clear All
+                        </Button>
+                      ) }
+                    </div>
+                    <div className="space-y-3">
+                      <Input
+                        id="book-images"
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={ handleImageChange }
+                        className="file:mr-2 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-cyan-50 file:text-cyan-700 hover:file:bg-cyan-100"
+                      />
 
+                      { newBookImages.length > 0 && (
+                        <div className="grid grid-cols-2 gap-3">
+                          { newBookImages.map( ( img, index ) => (
+                            <div key={ index } className="relative">
+                              <img src={ img.preview } alt={ `Book preview ${ index + 1 }` } className="w-full h-24 object-cover rounded-md border border-gray-200" />
+                              <div className="absolute top-1 right-1">
+                                <Button type="button" variant="secondary" size="sm" onClick={ () => removeImage( index ) } className="h-5 w-5 p-0 bg-white/90 hover:bg-white">
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </div>
+                          ) ) }
+                        </div>
+                      ) }
+
+                      { newBookImages.length === 0 && (
+                        <div className="border-2 border-dashed border-gray-300 rounded-md p-4 text-center">
+                          <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                          <p className="text-sm text-gray-500">Upload book cover images</p>
+                          <p className="text-xs text-gray-400 mt-1">PNG, JPG up to 5MB each • Multiple files supported</p>
+                        </div>
+                      ) }
+                    </div>
+                  </div>
                 </div>
                 <DialogFooter>
                   <Button variant="outline" onClick={ () => setIsAddDialogOpen( false ) }>
                     Cancel
                   </Button>
-                  <Button className="bg-cyan-600 hover:bg-cyan-700" onClick={ () => {
-                    handleAddBook( {
-                      title: bookInfo.title,
-                      price: bookInfo.price,
-                      subject: bookInfo.subject,
-                      ownerId: user.id
-                    } );
-                  } }>Add Book</Button>
+                  <Button className="bg-cyan-600 hover:bg-cyan-700" onClick={ handleAddBook }>
+                    Add Book
+                  </Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
           </div>
         </CardHeader>
+
         <CardContent>
           {/* Search and Filters */ }
           <div className="flex items-center space-x-4 mb-6">
@@ -218,11 +329,16 @@ export default function BooksPage() {
                   <TableCell>{ formatDate( book.createdAt ) }</TableCell>
                   <TableCell>
                     <div className="flex items-center space-x-2">
-                      <Button variant="ghost" size="sm" onClick={ () => {
-                        setSelectedBook( book );
-                        setBookInfo( book );
-                        setIsEditDialogOpen( true );
-                      } }>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={ () => {
+                          setSelectedBook( book );
+                          setBookInfo( book );
+                          setEditBookImages( book.images.map( ( url ) => ( { url, isNew: false } ) ) );
+                          setIsEditDialogOpen( true );
+                        } }
+                      >
                         <Edit className="h-4 w-4" />
                       </Button>
                       <Button
@@ -253,15 +369,28 @@ export default function BooksPage() {
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="edit-title">Title</Label>
-                <Input id="edit-title" defaultValue={ selectedBook.title } placeholder="Enter book title" onChange={ ( e ) => setBookInfo( { ...bookInfo, title: e.target.value } ) } />
+                <Input
+                  id="edit-title"
+                  defaultValue={ selectedBook.title }
+                  placeholder="Enter book title"
+                  onChange={ ( e ) => setBookInfo( { ...bookInfo, title: e.target.value } ) }
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="edit-price">Price</Label>
-                <Input id="edit-price" defaultValue={ selectedBook.price } placeholder="Enter price (optional)" onChange={ ( e ) => setBookInfo( { ...bookInfo, price: e.target.value } ) } />
+                <Input
+                  id="edit-price"
+                  defaultValue={ selectedBook.price }
+                  placeholder="Enter price (optional)"
+                  onChange={ ( e ) => setBookInfo( { ...bookInfo, price: e.target.value } ) }
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="edit-subject">Subject</Label>
-                <Select defaultValue={ selectedBook.subject } onValueChange={ ( subject ) => setBookInfo( { ...bookInfo, subject } ) }>
+                <Select
+                  defaultValue={ selectedBook.subject }
+                  onValueChange={ ( subject ) => setBookInfo( { ...bookInfo, subject } ) }
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select subject" />
                   </SelectTrigger>
@@ -275,13 +404,99 @@ export default function BooksPage() {
                 </Select>
               </div>
 
+              {/* Edit Images Section */ }
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="edit-book-images">Book Images</Label>
+                  { bookInfo?.images?.length > 0 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={ () => setBookInfo( { ...bookInfo, images: [] } ) }
+                      className="text-red-600 hover:text-red-700 bg-transparent"
+                    >
+                      Clear All
+                    </Button>
+                  ) }
+                </div>
+                <div className="space-y-3">
+                  <Input
+                    id="edit-book-images"
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={ ( e ) => {
+                      const files = Array.from( e.target.files );
+                      const previews = files.map( ( file ) => URL.createObjectURL( file ) );
+                      setBookInfo( {
+                        ...bookInfo,
+                        images: [ ...( bookInfo?.images || [] ), ...previews ],
+                        newImages: [ ...( bookInfo?.newImages || [] ), ...files ], // keep track of new files
+                      } );
+                    } }
+                    className="file:mr-2 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-cyan-50 file:text-cyan-700 hover:file:bg-cyan-100"
+                  />
+
+                  { bookInfo?.images?.length > 0 && (
+                    <div className="grid grid-cols-2 gap-3">
+                      { bookInfo.images.map( ( preview, index ) => (
+                        <div key={ index } className="relative">
+                          <img
+                            src={ preview || "/placeholder.svg" }
+                            alt={ `Book preview ${ index + 1 }` }
+                            className="w-full h-24 object-cover rounded-md border border-gray-200"
+                          />
+                          <div className="absolute top-1 right-1">
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              size="sm"
+                              onClick={ () => {
+                                const updated = [ ...bookInfo.images ];
+                                updated.splice( index, 1 );
+                                setBookInfo( { ...bookInfo, images: updated } );
+                              } }
+                              className="h-5 w-5 p-0 bg-white/90 hover:bg-white"
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      ) ) }
+                    </div>
+                  ) }
+
+                  { bookInfo?.images?.length === 0 && (
+                    <div className="border-2 border-dashed border-gray-300 rounded-md p-4 text-center">
+                      <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                      <p className="text-sm text-gray-500">Upload book cover images</p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        PNG, JPG up to 5MB each • Multiple files supported
+                      </p>
+                    </div>
+                  ) }
+
+                  { bookInfo?.images?.length > 0 && (
+                    <p className="text-xs text-gray-500 text-center">
+                      { bookInfo.images.length } image
+                      { bookInfo.images.length !== 1 ? "s" : "" } selected
+                    </p>
+                  ) }
+                </div>
+              </div>
             </div>
           ) }
           <DialogFooter>
             <Button variant="outline" onClick={ () => setIsEditDialogOpen( false ) }>
               Cancel
             </Button>
-            <Button className="bg-cyan-600 hover:bg-cyan-700" onClick={ () => handleEditBook( selectedBook.id ) }>Save Changes</Button>
+            <Button
+              className="bg-cyan-600 hover:bg-cyan-700"
+              onClick={ () => handleEditBook( selectedBook.id ) }
+            >
+              Save Changes
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

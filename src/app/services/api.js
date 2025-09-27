@@ -81,10 +81,10 @@ export const api = createApi( {
     } ),
 
     updateBook: builder.mutation( {
-      query: ( { id, ...updates } ) => ( {
+      query: ( { id, data } ) => ( {
         url: `${ API_LINKS.BOOKS }/${ id }`,
         method: "PUT",
-        body: updates,
+        body: data,
       } ),
       invalidatesTags: ( _, __, { id } ) => [
         { type: "Book", id },
